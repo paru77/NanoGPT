@@ -35,6 +35,7 @@ eval_interval=300
 learning_rate=1e-2
 device="cuda" if torch.cuda.is_available() else "cpu"
 eval_iter=200
+n_embd=32
 
 
 x=data[:block_size]
@@ -77,13 +78,14 @@ def estimate_loss():
 torch.manual_seed(1337) 
 
 class BigramLangaugeModel(nn.Module):
-    def __init__(self,vocab_size):
+    def __init__(self):
         super().__init__()
-        self.token_embedding_table=nn.Embedding(vocab_size, vocab_size)
-        print(self.token_embedding_table)
+        self.token_embedding_table=nn.Embedding(vocab_size, n_embd)
+        self.lm_head=nn.linear(n_embd,vocab_size)
     
     def forward(self, idx,target=None):
-        logits=self.token_embedding_table(idx)    #(batchsize,blocksize,vocab length)
+        embedding=self.token_embedding_table(idx)    #(batchsize,blocksize,n_embd)
+        logits= self.lm_head(embedding)                 #(batchsize,blocksize,Vocab_size)
         if target==None:
             loss=None
         else:
@@ -105,7 +107,7 @@ class BigramLangaugeModel(nn.Module):
 
             
 
-m=BigramLangaugeModel(vocab_size)
+m=BigramLangaugeModel()
 m.to(device)
 
 optimizer= torch.optim.AdamW(m.parameters(),lr=learning_rate)
@@ -126,6 +128,4 @@ context=torch.zeros((1,1),dtype=torch.long, device= device)
 print("Results of generation ", decode(m.generate(context, max_length=500)[0].tolist()))
 
 
-
-# Using Tranformer architecture for training
 
